@@ -1,5 +1,5 @@
-(ns zframes.mapper-test
-  (:require [zframes.mapper :as sut]
+(ns core-test
+  (:require [core :as sut]
             [matcho.core :refer [match]]
             [clojure.test :refer :all]))
 

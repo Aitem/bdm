@@ -31,5 +31,4 @@
       <version>1.10.1</version>
     </dependency>
   </dependencies>
-  <sourceDirectory>src</sourceDirectory>
 </project>

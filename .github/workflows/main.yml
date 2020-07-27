@@ -21,11 +21,11 @@ jobs:
 
       - uses: jlesquembre/clojars-publish-action@0.3
         env:
-          GROUP_ID: aitem
-          ARTIFACT_ID: bdm
-          PROJECT_NAME: bdm
-          USER: aitem
-          PROJECT: bdm
+          # GROUP_ID: aitem
+          # ARTIFACT_ID: bdm
+          # PROJECT_NAME: bdm
+          # USER: aitem
+          # PROJECT: bdm
 
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}

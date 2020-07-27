@@ -1,5 +1,7 @@
 # BiDirectionalMapper
 
+[![Clojars Project](https://img.shields.io/clojars/v/bdm.svg)](https://clojars.org/bdm)
+
 LOGO: 
 WHY:
 

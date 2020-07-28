@@ -3,19 +3,18 @@
 
 (declare get-in)
 
-(defn operand [ex]
-  (fn [e]
-    (if (coll? ex)
-      (get-in e ex)
-      (if (keyword? ex)
-        (get e ex)
-        ex))))
+(defn operand [ex e]
+  (if (coll? ex)
+    (get-in e ex)
+    (or (get e ex)
+        (get e (keyword ex)))))
 
 (def cmp {:= = :< < :> > :<= <= :>= >=})
 
 (defn pred [[op l r]]
-  #((get cmp op)
-    ((operand l) %) ((operand r) %)))
+  #(let [f (get cmp (keyword op))]
+     (assert f (str "Undefined operator \"" op "\" on [" op " " l " " r "]"))
+     (f (operand l %)  r)))
 
 (defn comp-expr [expr]
   (fn [coll]
@@ -35,10 +34,10 @@
 
 (defn not-expr [[op l]]
   (fn [coll]
-    (filter #(not ((operand l) %)) coll)))
+    (filter #(not (operand l %)) coll)))
 
 (defn contains-predicate [[_ l r]]
-  #(contains? (set r) ((operand l) %)))
+  #(contains? (set r) (operand l %)))
 
 (defn in-expr [args]
   (fn [coll]
@@ -75,7 +74,7 @@
          (if (vector? acc)
            (mapv #(export % (:map p)) acc)
            (export acc (:map p)))
-         (let [res (vec (query acc (:get p) ))]
+         (let [res (vec (query acc (or (:get p) (get p "get")) ))]
            (if (empty? res)
              (:set p)
              res)))
@@ -83,7 +82,7 @@
          acc
          (if (and (vector? acc) (keyword? p))
            (mapv p acc)
-           (get acc p)))))
+           (or (get acc p) (get acc (keyword p)))))))
    m path))
 
 (defn deep-merge

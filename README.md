@@ -12,6 +12,15 @@ TODO:
 
 ## Usage
 
+Path
+
+aray - is path
+obj - predicate
+
+`string` or `keyword` = `get`
+
+`map` - predicate filter
+
 TODO:
 
 ## Custom

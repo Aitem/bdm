@@ -3,19 +3,270 @@
             [matcho.core :refer [match]]
             [clojure.test :refer :all]))
 
+(defmacro getin= [obj pth pattern]
+  `(let [res# (sut/get-in ~obj ~pth)]
+     (is (= res# ~pattern))
+     res#))
+
+(defmacro set-in-match [obj pth val pattern]
+  `(let [res# (sut/set-in ~obj ~pth ~val)]
+     (is (= res# ~pattern))
+     res#))
+
 (def data
   {:resourceType "Patient"
    :id "patient-id"
-   :contact [{:telecom [{:system "phone"
+   :contact [{:telecom [{:system "fax"
+                         :value "+78219090"}
+                        {:system "phone"
                          :value "8800100200"}
                         {:system "sms"
                          :use "work"
-                         :value "88888900000"}
-                        {:system "fax"
-                         :value "+78219090"}]}]})
+                         :value "88888900000"}]}]})
 
-(deftest mapping-test
-  (testing "get-in"
+
+(deftest getin-test
+  (testing "Primitive getin"
+    (testing "with keywordize path"
+      (getin=
+       {:foo {:bar {:tar "mar"}}}
+       [:foo :bar :tar]
+       "mar"))
+
+    (testing "with string path"
+      (getin=
+       {:foo {:bar {:tar "mar"}}}
+       ["foo" "bar" "tar"]
+       "mar"))
+
+    (testing "with aray idx"
+      (getin=
+       {:foo [0 1 {:bar {:tar "mar"}}]}
+       ["foo" 2 "bar" "tar"]
+       "mar")))
+
+  (testing "Get value with"
+    (testing "equal predicate"
+      (getin=
+       [{:key "orion"  :value "1"}
+        {:key "venera" :value "2"}
+        {:key "orion"  :value "3"}]
+
+       [{:get [:= [:key] "orion"]}]
+
+       [{:key "orion"  :value "1"}
+        {:key "orion"  :value "3"}])
+
+      (getin=
+       [{:key "orion"  :value "1"}
+        {:key "venera" :value "2"}]
+       [{"get" ["=" [:key] "orion"]}]
+
+       [{:key "orion"  :value "1"}])
+
+      (getin=
+       [{:key "orion"  :value "1"}
+        {:key "venera" :value "2"}]
+       [{"get" ["=" ["key"] "orion"]}]
+
+       [{:key "orion"  :value "1"}]))
+
+    (testing "undefined pridcate"
+      (is (thrown? java.lang.AssertionError 
+                   ((getin=
+                     [{:key "orion"  :value "1"}]
+                     [{"get" ["ups" [:key] "orion"]}]
+                     nil)))))
+
+    (match
+     (sut/getin [{:foo  "bar"
+                  :value [{:bar "tar"
+                           :system "42"}]}]
+                  [{:get [:= :foo "bar"]}
+                   0 :value
+                   {:get [:= :bar "tar"]}
+                   0 :system])
+     "42")
+
+    #_(match
+     (sut/getin [{:foo {:bar {:baz "keywords seq"}}
+                  :value 12}]
+                  [{:get [:= "keywords seq" [:foo :bar :baz]]} 0 :value])
+     12)
+
+
+    (match
+     (sut/getin [{:foo 42 :value "42"}
+                 {:value "10"}
+                 {:foo -10 :value "-10"}]
+                [{:get [:not :foo]} :# :value])
+     ["10"])
+
+
+    (match
+     (sut/getin [{:foo 42 :value "42"}
+                   {:foo 10 :value "10"}
+                   {:foo -10 :value "-10"}]
+                  [{:get [:> :foo 20]} :# :value])
+     ["42"])
+    (match
+     (sut/getin [{:foo 42 :value "42"}
+                 {:foo 10 :value "10"}
+                 {:foo -10 :value "-10"}]
+                [{:get [:< :foo 0]} 0 :value])
+     "-10")
+
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:= :system "phone"]
+                                           :set {:system "phone" :value ""}} 0 :value])
+     "8800100200")
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:= :system "fax" ]
+                                           :set {:system "phone" :value ""}} 0 :value])
+     "+78219090")
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:and
+                                                   [:= :system "sms"]
+                                                   [:= :use "work" ]]
+                                            :set {:system "sms"
+                                                  :use "work"
+                                                  :value ""}} 0 :value])
+     "88888900000")
+
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:= "email" :system]
+                                             :set {:system "email" :value "superman@batma.com"}} :value])
+     "superman@batma.com")
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:and
+                                                   [:= :system "sms"]
+                                                   [:= "home" :use]]
+                                             :set {:system "sms"
+                                                   :use "home"
+                                                   :value "home_sms"}} :value])
+     "home_sms")
+
+    (match
+     (sut/getin data [:contact 0 :telecom {:get [:or
+                                                   [:= :system "fake_system"]
+                                                   [:=  :use "work"]]
+                                             :set {:system "fake_system"
+                                                   :use "work"
+                                                   :value "home_sms"}} 0 :value])
+     "88888900000"))
+
+  (testing "Set value"
+
+    (testing "Simple insert"
+      (match
+       (sut/setin {:telecom "12"}
+                  [:telecom ]
+                  "42")
+       {:telecom "42"})
+
+      (match
+       (sut/setin {:telecom {:system "phone"}}
+                  [:telecom :system]
+                  "email")
+       {:telecom {:system "email"}})
+
+      (match
+       (sut/setin {:telecom {:system ["phone" "email" "fax"]}}
+                  [:telecom :system 1]
+                  "postal")
+       {:telecom {:system ["phone" "postal" "fax"]}})
+
+
+      (match
+       (sut/setin nil
+                  [:telecom :system 1]
+                  "postal")
+       {:telecom {:system [nil "postal"]}}))
+
+    (testing "Insert by search"
+
+      (testing "Insert into nil"
+        (match
+         (sut/setin nil
+                    [:telecom {:get [:= :system "phone"]
+                               :set {:system "phone" :value nil}} :# :value]
+                    ["+7(912)-123-45-67"])
+         {:telecom vector? }))
+
+      (testing "Insert exists item"
+        (match
+         (sut/setin {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}]}
+                    [:telecom {:get [:= :system "phone"]
+                               :set {:system "phone" :value nil}} 0 :value]
+                    "+7(912)-123-45-67")
+         {:telecom [{:system "phone" :value "+7(912)-123-45-67"}]}))
+
+      (testing "Insert new item item"
+        (match
+         (sut/setin {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}]}
+                    [:telecom {:get [:= :system "email"]
+                               :set {:system "email" :rank 1 :value nil}} 0 :value]
+                    "e@mail.com")
+         {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}
+                    {:system "email" :rank 1 :value "e@mail.com"}
+                    ]}))
+
+      (testing "Merge with existing item"
+        (match
+         (sut/setin {:telecom [{:system "phone" :use "work" :rank 1 :value "+7(911)-189-12-12"}]}
+                    [:telecom {:get [:= :system "phone"]
+                               :set {:system "phone" :rank 2 :value nil}} 0 :value]
+                    "8800100200")
+         {:telecom [{:system "phone" :use "work" :rank 1 :value "8800100200"}]})))
+
+    (testing "Arrays of objects"
+      (def in [{:rt "user" :userName "marat" :email "foo@com" :password "Fooooooooo"}
+               {:rt "role" :name "practitioner" :link "pr"}
+               {:rt "role" :name "miac"}
+               {:rt "role" :name "org-admin" :link "org"}])
+
+      (def role-mapping
+        [[[:link] [:link]]
+         [[:name] [:name]]
+         [[:resourceType] [:rt]]])
+
+      (def user-mapping
+        [[[:login] [:userName]]
+         [[:rt] [:rt]]
+         [[:contact] [:email]]
+         [[:password] [:password]]])
+
+      (def m
+        [[[:user {:map user-mapping}]     [{:get [:= :rt "user" ]} 0]]
+         [[:role :# {:map role-mapping}]  [{:get [:= :rt "role"]} :#]]])
+
+      (match
+       (sut/import in m)
+       {:user {:login "marat" :password "Fooooooooo" :contact "foo@com"},
+        :role [{:link "pr"   :name "practitioner" :resourceType "role"}
+               {:name "miac" :resourceType "role"}
+               {:link "org"  :name "org-admin" :resourceType "role"}]})
+
+      (match
+       (sut/export (sut/import in m) m)
+       in)
+
+      (match
+       (sut/getin
+        {:role [{:id 1} {:id 2}]}
+        [:role :# {:map [[[:id] [:longId]]]}])
+       [{:longId 1} {:longId 2}]
+       )
+
+      
+      )
+
+    ))
+
+
+
+#_(deftest mapping-test
+  #_(testing "get-in"
     (match
      (sut/get-in data [:contact 0 :telecom {:get [:= :system "phone"]} 0])
      {:system "phone"
@@ -32,8 +283,8 @@
                                                     {:sys "foo1bar2", :baz {:quux "test3"}}]}
                                 {:sys "foo2", :bar [{:sys "foo2bar1", :baz {:quux "test2"}}
                                                     {:sys "foo2bar2", :baz {:quux "test"}}]}]}
-                         [:foo {:get [:= "test" [:bar {:get [:= "test" [:baz :quux]]} 0 :baz :quux]]} 0
-                          :bar {:get [:= "test" [:baz :quux]]} 0 :baz])
+                         [:foo {:get [:=  [:bar {:get [:=  [:baz :quux] "test"]} 0 :baz :quux] "test"]} 0
+                          :bar {:get [:=  [:baz :quux] "test"]} 0 :baz])
              {:quux "test"})))
 
   (testing "default value for export"
@@ -148,192 +399,3 @@
     (match
      (sut/export (sut/import resource mapping) mapping)
       resource)))
-
-(deftest path-test
-  (testing "Get value"
-    (match
-     (sut/getin [{:foo  "bar"
-                  :value [{:bar "tar"
-                           :system "42"}]}]
-                  [{:get [:= :foo "bar"]}
-                   0 :value
-                   {:get [:= :bar "tar"]}
-                   0 :system])
-     "42")
-
-    (match
-     (sut/getin [{:foo {:bar {:baz "keywords seq"}}
-                  :value 12}]
-                  [{:get [:= "keywords seq" [:foo :bar :baz]]} 0 :value])
-     12)
-
-
-    (match
-     (sut/getin [{:foo 42 :value "42"}
-                 {:value "10"}
-                 {:foo -10 :value "-10"}]
-                [{:get [:not :foo]} :# :value])
-     ["10"])
-
-
-    (match
-     (sut/getin [{:foo 42 :value "42"}
-                   {:foo 10 :value "10"}
-                   {:foo -10 :value "-10"}]
-                  [{:get [:> :foo 20]} :# :value])
-     ["42"])
-    (match
-     (sut/getin [{:foo 42 :value "42"}
-                   {:foo 10 :value "10"}
-                   {:foo -10 :value "-10"}]
-                  [{:get [:> 0 :foo]} 0 :value])
-     "-10")
-
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:= :system "phone"]
-                                           :set {:system "phone" :value ""}} 0 :value])
-     "8800100200")
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:= "fax" :system]
-                                           :set {:system "phone" :value ""}} 0 :value])
-     "+78219090")
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:and
-                                                   [:= :system "sms"]
-                                                   [:= "work" :use]]
-                                            :set {:system "sms"
-                                                  :use "work"
-                                                  :value ""}} 0 :value])
-     "88888900000")
-
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:= "email" :system]
-                                             :set {:system "email" :value "superman@batma.com"}} :value])
-     "superman@batma.com")
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:and
-                                                   [:= :system "sms"]
-                                                   [:= "home" :use]]
-                                             :set {:system "sms"
-                                                   :use "home"
-                                                   :value "home_sms"}} :value])
-     "home_sms")
-
-    (match
-     (sut/getin data [:contact 0 :telecom {:get [:or
-                                                   [:= :system "fake_system"]
-                                                   [:= "work" :use]]
-                                             :set {:system "fake_system"
-                                                   :use "work"
-                                                   :value "home_sms"}} 0 :value])
-     "88888900000"))
-
-  (testing "Set value"
-
-    (testing "Simple insert"
-      (match
-       (sut/setin {:telecom "12"}
-                  [:telecom ]
-                  "42")
-       {:telecom "42"})
-
-      (match
-       (sut/setin {:telecom {:system "phone"}}
-                  [:telecom :system]
-                  "email")
-       {:telecom {:system "email"}})
-
-      (match
-       (sut/setin {:telecom {:system ["phone" "email" "fax"]}}
-                  [:telecom :system 1]
-                  "postal")
-       {:telecom {:system ["phone" "postal" "fax"]}})
-
-
-      (match
-       (sut/setin nil
-                  [:telecom :system 1]
-                  "postal")
-       {:telecom {:system [nil "postal"]}}))
-
-    (testing "Insert by search"
-
-      (testing "Insert into nil"
-        (match
-         (sut/setin nil
-                    [:telecom {:get [:= :system "phone"]
-                               :set {:system "phone" :value nil}} :# :value]
-                    ["+7(912)-123-45-67"])
-         {:telecom vector? }))
-
-      (testing "Insert exists item"
-        (match
-         (sut/setin {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}]}
-                    [:telecom {:get [:= :system "phone"]
-                               :set {:system "phone" :value nil}} 0 :value]
-                    "+7(912)-123-45-67")
-         {:telecom [{:system "phone" :value "+7(912)-123-45-67"}]}))
-
-      (testing "Insert new item item"
-        (match
-         (sut/setin {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}]}
-                    [:telecom {:get [:= :system "email"]
-                               :set {:system "email" :rank 1 :value nil}} 0 :value]
-                    "e@mail.com")
-         {:telecom [{:system "phone" :use "work" :value "+7(911)-189-12-12"}
-                    {:system "email" :rank 1 :value "e@mail.com"}
-                    ]}))
-
-      (testing "Merge with existing item"
-        (match
-         (sut/setin {:telecom [{:system "phone" :use "work" :rank 1 :value "+7(911)-189-12-12"}]}
-                    [:telecom {:get [:= :system "phone"]
-                               :set {:system "phone" :rank 2 :value nil}} 0 :value]
-                    "8800100200")
-         {:telecom [{:system "phone" :use "work" :rank 1 :value "8800100200"}]})))
-
-    (testing "Arrays of objects"
-      (def in [{:rt "user" :userName "marat" :email "foo@com" :password "Fooooooooo"}
-               {:rt "role" :name "practitioner" :link "pr"}
-               {:rt "role" :name "miac"}
-               {:rt "role" :name "org-admin" :link "org"}])
-
-      (def role-mapping
-        [[[:link] [:link]]
-         [[:name] [:name]]
-         [[:resourceType] [:rt]]])
-
-      (def user-mapping
-        [[[:login] [:userName]]
-         [[:rt] [:rt]]
-         [[:contact] [:email]]
-         [[:password] [:password]]])
-
-      (def m
-        [[[:user {:map user-mapping}]     [{:get [:= "user" :rt]} 0]]
-         [[:role :# {:map role-mapping}]  [{:get [:= "role" :rt]} :#]]])
-
-      (match
-       (sut/import in m)
-       {:user {:login "marat" :password "Fooooooooo" :contact "foo@com"},
-        :role [{:link "pr"   :name "practitioner" :resourceType "role"}
-               {:name "miac" :resourceType "role"}
-               {:link "org"  :name "org-admin" :resourceType "role"}]})
-
-      (match
-       (sut/export (sut/import in m) m)
-       in)
-
-      (match
-       (sut/getin
-        {:role [{:id 1} {:id 2}]}
-        [:role :# {:map [[[:id] [:longId]]]}])
-       [{:longId 1} {:longId 2}]
-       )
-
-      
-      )
-
-    ))
-
-

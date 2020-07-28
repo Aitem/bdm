@@ -15,7 +15,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v2
       - name: Prepare java
         uses: actions/setup-java@v1
         with:
@@ -32,7 +32,7 @@ jobs:
   clojars:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v2
       - uses: jlesquembre/clojars-publish-action@0.3
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}

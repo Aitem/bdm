@@ -69,7 +69,33 @@
         {:key "venera" :value "2"}]
        [{"get" ["=" ["key"] "orion"]}]
 
-       [{:key "orion"  :value "1"}]))
+       [{:key "orion"  :value "1"}])
+
+      (getin=
+       [{"key" "orion"  "value" "1"}
+        {"key" "venera" "value" "2"}]
+       [{"get" ["=" ["key"] "orion"]}]
+
+       [{"key" "orion"  "value" "1"}])
+
+      (testing "with deep path"
+        (getin=
+         [{"key" {"foo" "bar"}  "value" "1"}
+          {"key" "venera" "value" "2"}]
+         [{"get" ["=" ["key" "foo" ] "bar"]}]
+
+         [{"key" {"foo" "bar"}  "value" "1"}])
+
+        (getin=
+         [{"key" {"foo" "bar"}  "value" "1"}
+          {"key" {"tar" "mar"} "value" "2"}]
+         [{"get" ["=" ["key" "tar" ] "mar"]}]
+
+         [{"key" {"tar" "mar"}  "value" "2"}])
+
+        )
+
+      )
 
     (testing "undefined pridcate"
       (is (thrown? java.lang.AssertionError 

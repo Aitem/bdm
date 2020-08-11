@@ -3,25 +3,15 @@
 [![Clojars Project](https://img.shields.io/clojars/v/bdm.svg)](https://clojars.org/bdm)
 ![ci](https://github.com/aitem/bdm/workflows/CI/badge.svg)
 
-LOGO: 
+
 WHY:
 
 ## Install
 
-TODO:
+[![Clojars Project](https://img.shields.io/clojars/v/bdm.svg)](https://clojars.org/bdm)
 
 ## Usage
 
-Path
-
-aray - is path
-obj - predicate
-
-`string` or `keyword` = `get`
-
-`map` - predicate filter
-
-TODO:
 
 ## Custom
 

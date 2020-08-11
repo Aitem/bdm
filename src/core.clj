@@ -150,7 +150,8 @@
   [d m]
   (reduce
    (fn [acc [t f]]
-     (let [data (getin d f)]
+     (let [f (or f t)
+           data (getin d f)]
        (if (some? data)
          (setin acc t data)
          acc)))
@@ -160,7 +161,8 @@
   [d m & [default]]
   (reduce
    (fn [acc [t f]]
-     (let [data (getin d t)]
+     (let [f (or f t)
+           data (getin d t)]
        (if (some? data)
          (setin acc f data)
          acc)))

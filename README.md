@@ -4,20 +4,52 @@
 ![ci](https://github.com/aitem/bdm/workflows/CI/badge.svg)
 
 
-WHY:
-
-## Install
-
-[![Clojars Project](http://clojars.org/bdm/latest-version.svg)](http://clojars.org/bdm)
+BDM is super simple, fully declarative bi directional mapper that allow convert your data from `A` to `B` and back.
 
 ## Usage
 
+``` clj
+(ns user
+  (:require [bdm.core as bdm]))
+  
+(def person
+  {:name "John"
+   :lastname "Smith"
+   :contacts [{:type "email"
+               :value "john@smith.com"}
+              {:type "phone"
+               :value "122233344"}]})
 
-## Custom
+(def mapping
+  [[[:name]]
+   [[:lastname]]
+   [[:emails] [:contacts {:get [:= :type "email"]} :#]]
+   [[:phones] [:contacts {:get [:= :type "phone"]} :#]]])
 
-TODO:
+(bdm/import person mapping)
 
-### Develop
+;; Will return 
+;; {:name "John",
+;;  :lastname "Smith",
+;;  :emails [{:type "email", :value "john@smith.com"}],
+;;  :phones [{:type "phone", :use "home", :value "122233344"}
+;;           {:type "phone", :use "vork", :value "122233344"}]}
+  
+  
+;; We can do import/export roundtrip
+
+(= person (bdm/export (bdm/import person mapping) mapping)) ;; => true
+
+```
+
+## Concepts
+
+### Short alias
+### Getters and setters
+### Predicates 
+### Submapping 
+
+## Develop
 
 ```
 # run repl

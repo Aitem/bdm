@@ -8,7 +8,7 @@ WHY:
 
 ## Install
 
-[![Clojars Project](https://img.shields.io/clojars/v/bdm.svg)](https://clojars.org/bdm)
+[![Clojars Project](http://clojars.org/bdm/latest-version.svg)](http://clojars.org/bdm)
 
 ## Usage
 
@@ -22,6 +22,7 @@ TODO:
 ```
 # run repl
 $ make repl
+
 # run test 
 $ make test 
 ```

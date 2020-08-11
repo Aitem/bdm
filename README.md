@@ -45,9 +45,17 @@ BDM is super simple, fully declarative bi directional mapper that allow convert 
 ## Concepts
 
 ### Short alias
+...
+
 ### Getters and setters
+...
+
 ### Predicates 
+...
+
 ### Submapping 
+...
+
 
 ## Develop
 

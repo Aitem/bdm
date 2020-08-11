@@ -66,3 +66,6 @@ $ make repl
 # run test 
 $ make test 
 ```
+
+
+MIT License Copyright (c) 2020 Marat Surmashev

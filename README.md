@@ -4,7 +4,7 @@
 ![ci](https://github.com/aitem/bdm/workflows/CI/badge.svg)
 
 
-BDM is super simple, fully declarative bi directional mapper that allow convert your data from `A` to `B` and back.
+BDM is super simple, fully declarative clj/cljc bi directional mapper that allow convert your data from `A` to `B` and back.
 
 ## Usage
 

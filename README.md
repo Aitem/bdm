@@ -18,7 +18,7 @@ BDM is super simple, fully declarative clj/cljc bi directional mapper that allow
    :contacts [{:type  "email"
                :value "john@smith.com"}
               {:type  "phone"
-			   :use   "home"
+               :use   "home"
                :value "12223334455"}
 			  {:type  "phone"
 			   :use   "work"
@@ -107,10 +107,10 @@ Path can be deep
 ### Short alias
 ...
 
-### Getters and setters
+### Predicates and arrays
 ...
 
-### Predicates
+### Setters
 ...
 
 ### Submapping
@@ -127,6 +127,10 @@ $ make repl
 # run test
 $ make test
 ```
+
+## Extra
+
+For more details and usage details see tests.
 
 
 

@@ -50,11 +50,11 @@ BDM is super simple, fully declarative clj/cljc bi directional mapper that allow
 
 ### Mapping
 
-`Mapping` is a array of `paths` pairs. First `path` of pair used as getter rule and second as setter.
+`Mapping` is a array of `paths` pairs. First `path` of pair used as setter rule and second as a getter rule.
 
 ``` clj
 (def mapping
-  [[[:login]  [:username]]])
+  [[[:username] [:login]]])
 
 (def user
   {:login "super-user"})
@@ -71,7 +71,33 @@ BDM is super simple, fully declarative clj/cljc bi directional mapper that allow
 ;; {:login "super-user"}
 ```
 
-In this sample we take value from user by path `[:login]` and set this value into resutl by path `[:username]`
+In this sample we take value from `user` by path `[:login]` and set this value into result with path `[:username]`.
+
+Path can be deep
+
+``` clj
+(def window-mapping
+  [[[:hash] [:window :location :hash]]
+   [[:path] [:window :location :pathname]]])
+
+(def window
+  {:window {:location {:hash     "#about"
+                       :pathname "/index.html"}}})
+
+(bdm/import window window-mapping)
+;; Will return
+;; {:hash "#about"
+;;  :path "/index.html"}
+
+(def location
+ {:hash "#contact"
+  :path "/spa.html"})
+
+(bdm/export location window-mapping)
+;; Will return
+;; {:window {:location {:hash     "#contact"
+;;                      :pathname "/spa.html"}}})
+```
 
 
 
